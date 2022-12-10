@@ -5,9 +5,9 @@ Idea is to have code examples of how to download files in Rust using different t
 
 Techniques:
 - blocking [reqwest](https://github.com/seanmonstar/reqwest)
-    - in sequence new client for each file -> TODO
-    - in sequence same client for each file -> TODO
-    - new thread for each file -> TODO
+    - in sequence new client for each file -> done
+    - in sequence same client for each file -> done
+    - new thread for each file -> done
     - threadpool for all files -> TODO
 - async/await -> TODO
 
