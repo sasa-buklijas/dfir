@@ -121,24 +121,18 @@ fn main() {
     });
 
     //
-    //  TEST_4 (work in progress)
+    //  TEST_4 
     //
-    // //let urls = Rc::new(urls);
-    // let urls_rc4 = Arc::clone(&urls_rc);
-    // let start = Instant::now();
-    // let pool = ThreadPool::new(4); // 4 threads, performance probably depends on number of threads, is there magic number ? 
-    // for (url, file) in urls_rc4.iter().zip(files_t4.iter()) {
-    // //for i in 0..500 {
-    //     //download_file_to(&url, file);
-    //     //pool.execute(move || println!("{i}"));
-    //     pool.execute(move || download_file_to(&url, file));
-    // }
+    let start = Instant::now();
 
-    // let duration = start.elapsed();
-    // pool.join();
-    // println!("Download TEST_4 took: {:?}", duration);
+    let pool = ThreadPool::new(100); // 4065 ok
+    for (url, file) in urls.into_iter().zip(files_t4.into_iter()) {
+        pool.execute(move || download_file_to(&url, &file));
+    }
+    pool.join();
 
-  
+    let duration = start.elapsed();
+    println!("Download TEST_4 took: {:?}", duration);
 
     //
     // delete test directory and all files

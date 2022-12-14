@@ -8,7 +8,8 @@ Techniques:
     - in sequence new client for each file -> done
     - in sequence same client for each file -> done
     - new thread for each file -> done
-    - threadpool for all files -> TODO
+    - threadpool for all files -> done
+    - threadpool for all files, but with reuse of client -> TODO
 - async/await -> TODO
 
 ## Test data
