@@ -5,6 +5,8 @@ use std::fs::File;
 use std::io::{BufReader, BufRead};
 use std::time::Instant;
 use std::thread;
+//use std::sync::Arc;   // if I need Atomically Reference Counted
+use threadpool::ThreadPool;
 
 fn download_file_to(url: &str, to: &str) {
     let resp = reqwest::blocking::get(url).unwrap();
@@ -23,12 +25,15 @@ fn main() {
     let _new_dir = fs::create_dir_all(&dir_t2).unwrap();  
     let dir_t3 = format!("{}/brtpf", custom_datetime_format); // brtpf is blocking reqwest thread per file (new thread for each download)
     let _new_dir = fs::create_dir_all(&dir_t3).unwrap();  
+    let dir_t4 = format!("{}/brtp", custom_datetime_format); // brtp is blocking reqwest thread pool (new thread for each download)
+    let _new_dir = fs::create_dir_all(&dir_t4).unwrap();  
 
     let mut urls = Vec::new();
     let mut files_t1 = Vec::new();
     let mut files_t2 = Vec::new();
     let mut files_t3 = Vec::new();
-    let input = File::open("../testdata/100files10kB.txt").unwrap();
+    let mut files_t4 = Vec::new();
+    let input = File::open("../testdata/10files10kB.txt").unwrap();
     let buffered = BufReader::new(input);
 
     for line in buffered.lines() {
@@ -44,11 +49,16 @@ fn main() {
 
         let file_path_t3 = format!("{}/{}", &dir_t3, file);     
         files_t3.push(file_path_t3);
+
+        let file_path_t4 = format!("{}/{}", &dir_t4, file);     
+        files_t4.push(file_path_t4);
     }    
     let urls = urls;
+    //let urls_rc  = Arc::new(urls);
     let files_t1 = files_t1;
     let files_t2 = files_t2;
     let files_t3 = files_t3;
+    let files_t4 = files_t4;
 
     //
     //  TEST_1
@@ -92,14 +102,43 @@ fn main() {
     //  TEST_3
     //
     let start = Instant::now();
-    let handle = thread::spawn(move || {
+    thread::scope(|scope| {
+        
+        let mut hiv = Vec::new();
         for (url, file) in urls.iter().zip(files_t3.iter()) {
-            download_file_to(&url, file);
+            let handle = scope.spawn(move || {
+                download_file_to(&url, file);
+            });
+            hiv.push(handle);
         }
+        
+        for h in hiv.into_iter() {
+            h.join().unwrap();
+        }
+
+        let duration = start.elapsed();
+        println!("Download TEST_3 took: {:?}", duration);
     });
-    handle.join().unwrap();
-    let duration = start.elapsed();
-    println!("Download TEST_3 took: {:?}", duration);
+
+    //
+    //  TEST_4 (work in progress)
+    //
+    // //let urls = Rc::new(urls);
+    // let urls_rc4 = Arc::clone(&urls_rc);
+    // let start = Instant::now();
+    // let pool = ThreadPool::new(4); // 4 threads, performance probably depends on number of threads, is there magic number ? 
+    // for (url, file) in urls_rc4.iter().zip(files_t4.iter()) {
+    // //for i in 0..500 {
+    //     //download_file_to(&url, file);
+    //     //pool.execute(move || println!("{i}"));
+    //     pool.execute(move || download_file_to(&url, file));
+    // }
+
+    // let duration = start.elapsed();
+    // pool.join();
+    // println!("Download TEST_4 took: {:?}", duration);
+
+  
 
     //
     // delete test directory and all files
